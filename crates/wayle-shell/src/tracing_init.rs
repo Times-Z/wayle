@@ -5,12 +5,14 @@ use wayle_config::infrastructure::paths::ConfigPaths;
 
 pub(crate) fn init() -> Result<(), Box<dyn Error>> {
     const DAYS_TO_KEEP: usize = 7;
+    const DEFAULT_CONSOLE_FILTER: &str = "warn,wayle_hyprland::ipc::events=error";
+    const DEFAULT_FILE_FILTER: &str = "warn,wayle_=info,wayle_hyprland::ipc::events=error";
 
-    let console_filter =
-        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("warn"));
+    let console_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(DEFAULT_CONSOLE_FILTER));
     let file_filter = env::var("WAYLE_FILE_LOG")
         .map(EnvFilter::new)
-        .unwrap_or_else(|_| EnvFilter::new("warn,wayle_=info"));
+        .unwrap_or_else(|_| EnvFilter::new(DEFAULT_FILE_FILTER));
 
     let log_dir = ConfigPaths::log_dir()?;
 

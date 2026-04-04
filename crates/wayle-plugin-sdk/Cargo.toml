@@ -1,0 +1,16 @@
+[package]
+name = "wayle-plugin-sdk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "SDK for authoring Wayle WASM plugins"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[lints.rust]
+unsafe_code = "allow"
+missing_docs = "allow"

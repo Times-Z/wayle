@@ -258,6 +258,50 @@ restart-policy = "on-failure"
 
 If a watch process exits, `restart-policy` controls what happens:
 
+## WASM Plugins
+
+Wayle also supports native WASM plugins loaded via `[[modules.plugins]]` and placed in the bar as `plugin-<id>` modules.
+
+### SDK
+
+Use the `wayle-plugin-sdk` crate in this repository to implement ABI-compatible plugins.
+See [SDK.md](./docs/config/SDK/SDK.md) for the current SDK spec.
+
+### Example config
+
+```toml
+[[modules.plugins]]
+id = "system-updates"
+kind = "wasm"
+wasm-path = "~/.local/share/wayle/plugins/wayle_plugin_update.wasm"
+capabilities = ["command.exec", "net.http.get", "clipboard.write"]
+command-exec-allowed-prefixes = [
+  "alacritty -e sh -lc 'yay",
+  "xdg-open ",
+  "printf %s "
+]
+icon-name = "tb-refresh-dot-symbolic"
+interval-ms = 600000
+left-click = "dropdown:plugin-system-updates"
+
+[[bar.layout]]
+monitor = "*"
+right = ["plugin-system-updates", "clock"]
+```
+
+`command-exec-allowed-prefixes` acts as a strict allowlist; if it is empty, command execution is denied.
+
+`wasm-path` supports home/environment expansion:
+
+- `~/.local/share/wayle/plugins/wayle_plugin_update.wasm`
+- `$HOME/.local/share/wayle/plugins/wayle_plugin_update.wasm`
+- `${HOME}/.local/share/wayle/plugins/wayle_plugin_update.wasm`
+
+The plugin payload can include dropdown data; Wayle renders it automatically and keeps it synced with plugin refreshes.
+
+Row actions should use typed objects (`run-command`, `open-url`, `copy-text`, `refresh-now`).
+Legacy string actions are still accepted for compatibility.
+
 - `never` (default) - stay dead
 - `on-exit` - restart after any exit
 - `on-failure` - restart only on non-zero exit codes
@@ -400,6 +444,7 @@ Color values: `"auto"`, hex (`"#ff0000"`), or theme token (`"red"`, `"primary"`,
 etc.).
 
 </details>
+
 
 ## Credits
 

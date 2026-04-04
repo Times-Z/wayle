@@ -16,6 +16,7 @@ mod microphone;
 mod netstat;
 mod network;
 mod notification;
+mod plugin;
 mod power;
 mod ram;
 mod registry;
@@ -92,6 +93,10 @@ pub(crate) fn create_module(
 ) -> Option<ModuleInstance> {
     let module = module_ref.module();
     let class = module_ref.class().map(String::from);
+
+    if let Some(id) = module.plugin_id() {
+        return plugin::Factory::create_for_id(id, settings, services, dropdowns, class);
+    }
 
     if let Some(id) = module.custom_id() {
         return custom::Factory::create_for_id(id, settings, services, dropdowns, class);

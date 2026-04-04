@@ -59,6 +59,7 @@ wayle-systray = { workspace = true, features = ["adapter-gtk"] }
 wayle-wallpaper.workspace = true
 wayle-weather.workspace = true
 wayle-widgets = { workspace = true }
+wasmtime.workspace = true
 zbus.workspace = true
 
 [dev-dependencies]

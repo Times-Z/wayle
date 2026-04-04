@@ -151,6 +151,40 @@ impl Bar {
 
         self.layout = new_layout;
     }
+
+    pub(super) fn reload_plugin_modules(&mut self) {
+        let settings = &self.settings;
+        let services = &self.services;
+        let dropdowns = &self.dropdowns;
+
+        if section_contains_plugin(&self.layout.left) {
+            rebuild_section_force(
+                &mut self.left,
+                &self.layout.left,
+                settings,
+                services,
+                dropdowns,
+            );
+        }
+        if section_contains_plugin(&self.layout.center) {
+            rebuild_section_force(
+                &mut self.center,
+                &self.layout.center,
+                settings,
+                services,
+                dropdowns,
+            );
+        }
+        if section_contains_plugin(&self.layout.right) {
+            rebuild_section_force(
+                &mut self.right,
+                &self.layout.right,
+                settings,
+                services,
+                dropdowns,
+            );
+        }
+    }
 }
 
 /// Updates a bar section to match a new layout, only touching modules
@@ -217,5 +251,101 @@ fn rebuild_section(
                 );
             }
         }
+    }
+}
+
+fn rebuild_section_force(
+    factory: &mut FactoryVecDeque<BarItemFactory>,
+    layout: &[BarItem],
+    settings: &BarSettings,
+    services: &ShellServices,
+    dropdowns: &Rc<DropdownRegistry>,
+) {
+    let mut guard = factory.guard();
+
+    while !guard.is_empty() {
+        guard.remove(guard.len() - 1);
+    }
+
+    for (idx, item) in layout.iter().enumerate() {
+        guard.insert(
+            idx,
+            BarItemFactoryInit {
+                item: item.clone(),
+                settings: settings.clone(),
+                services: services.clone(),
+                dropdowns: dropdowns.clone(),
+            },
+        );
+    }
+}
+
+fn section_contains_plugin(items: &[BarItem]) -> bool {
+    items.iter().any(|item| match item {
+        BarItem::Module(module_ref) => module_ref.module().plugin_id().is_some(),
+        BarItem::Group(group) => group
+            .modules
+            .iter()
+            .any(|module_ref| module_ref.module().plugin_id().is_some()),
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use wayle_config::schemas::bar::{BarGroup, BarModule, ClassedModule, ModuleRef};
+
+    use super::{BarItem, section_contains_plugin};
+
+    #[test]
+    fn section_contains_plugin_returns_true_for_plain_plugin_module() {
+        let items = vec![BarItem::Module(ModuleRef::Plain(BarModule::Plugin(
+            String::from("system-updates"),
+        )))];
+
+        assert!(section_contains_plugin(&items));
+    }
+
+    #[test]
+    fn section_contains_plugin_returns_true_for_group_with_plugin_module() {
+        let items = vec![BarItem::Group(BarGroup {
+            name: String::from("group"),
+            modules: vec![
+                ModuleRef::Plain(BarModule::Clock),
+                ModuleRef::Plain(BarModule::Plugin(String::from("system-updates"))),
+            ],
+        })];
+
+        assert!(section_contains_plugin(&items));
+    }
+
+    #[test]
+    fn section_contains_plugin_returns_true_for_classed_plugin_module() {
+        let items = vec![BarItem::Module(ModuleRef::Classed(ClassedModule {
+            module: BarModule::Plugin(String::from("system-updates")),
+            class: String::from("updates-module"),
+        }))];
+
+        assert!(section_contains_plugin(&items));
+    }
+
+    #[test]
+    fn section_contains_plugin_returns_false_for_builtin_and_custom_only() {
+        let items = vec![
+            BarItem::Module(ModuleRef::Plain(BarModule::Clock)),
+            BarItem::Group(BarGroup {
+                name: String::from("group"),
+                modules: vec![
+                    ModuleRef::Plain(BarModule::Volume),
+                    ModuleRef::Plain(BarModule::Custom(String::from("updates"))),
+                ],
+            }),
+        ];
+
+        assert!(!section_contains_plugin(&items));
+    }
+
+    #[test]
+    fn section_contains_plugin_returns_false_for_empty_section() {
+        assert!(!section_contains_plugin(&[]));
     }
 }

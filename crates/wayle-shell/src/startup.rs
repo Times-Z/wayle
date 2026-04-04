@@ -121,7 +121,7 @@ impl StartupTimer {
             format!("{total_ms}ms")
         };
         let _ = self.multi.println(format!(
-            "\n{}\n",
+            "\n{}\n\n",
             style(format!("Started in {time_str}")).green().bold()
         ));
     }

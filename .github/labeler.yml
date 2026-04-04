@@ -37,3 +37,7 @@
 "area:ci":
     - changed-files:
           - any-glob-to-any-file: ".github/**"
+
+"area:plugin-sdk":
+    - changed-files:
+          - any-glob-to-any-file: "crates/wayle-plugin-sdk/**"

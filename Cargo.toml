@@ -7,6 +7,7 @@ members = [
 	"crates/wayle-icons",
 	"crates/wayle-idle-inhibit",
 	"crates/wayle-ipc",
+	"crates/wayle-plugin-sdk",
 	"crates/wayle-shell",
 	"crates/wayle-styling",
 	"crates/wayle-widgets",
@@ -90,6 +91,7 @@ tracing-attributes = "0.1.30"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json"] }
 unic-langid = "0.9"
 wildcard = "0.3"
+wasmtime = "33"
 zbus = { version = "5.11.0", default-features = false, features = ["tokio"] }
 
 wayle-audio = "0.1.0"
@@ -115,6 +117,7 @@ wayle-i18n = { path = "crates/wayle-i18n" }
 wayle-icons = { path = "crates/wayle-icons" }
 wayle-idle-inhibit = { path = "crates/wayle-idle-inhibit" }
 wayle-ipc = { path = "crates/wayle-ipc" }
+wayle-plugin-sdk = { path = "crates/wayle-plugin-sdk" }
 wayle-shell = { path = "crates/wayle-shell" }
 wayle-styling = { path = "crates/wayle-styling" }
 wayle-widgets = { path = "crates/wayle-widgets" }

@@ -162,6 +162,8 @@ pub struct ClassedModule {
 /// Built-in modules use kebab-case names (e.g., `"clock"`, `"battery"`).
 /// Custom modules use the pattern `custom-<id>` where `<id>` is the module
 /// ID defined in `[[modules.custom]]`.
+/// Plugin modules use the pattern `plugin-<id>` where `<id>` is the plugin
+/// ID defined in `[[modules.plugins]]`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BarModule {
     /// Battery status and percentage.
@@ -218,6 +220,8 @@ pub enum BarModule {
     WorldClock,
     /// User-defined custom module by ID.
     Custom(String),
+    /// Native plugin module by ID.
+    Plugin(String),
 }
 
 impl schemars::JsonSchema for BarModule {
@@ -227,13 +231,18 @@ impl schemars::JsonSchema for BarModule {
 
     fn json_schema(_generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
         schemars::json_schema!({
-            "description": "Bar module name. Built-in modules or custom modules with 'custom-<id>' pattern.",
+            "description": "Bar module name. Built-in modules, custom modules with 'custom-<id>', or plugins with 'plugin-<id>'.",
             "anyOf": [
                 { "enum": BUILTIN_MODULES },
                 {
                     "type": "string",
                     "pattern": "^custom-[a-z0-9-]+$",
                     "description": "Custom module ID (e.g., 'custom-gpu-temp')"
+                },
+                {
+                    "type": "string",
+                    "pattern": "^plugin-[a-z0-9-]+$",
+                    "description": "Plugin module ID (e.g., 'plugin-arch-updates')"
                 }
             ]
         })
@@ -242,6 +251,7 @@ impl schemars::JsonSchema for BarModule {
 
 impl BarModule {
     const CUSTOM_PREFIX: &str = "custom-";
+    const PLUGIN_PREFIX: &str = "plugin-";
 
     fn to_kebab_case(&self) -> &'static str {
         match self {
@@ -272,6 +282,7 @@ impl BarModule {
             Self::WindowTitle => "window-title",
             Self::WorldClock => "world-clock",
             Self::Custom(_) => unreachable!("Custom modules use dynamic serialization"),
+            Self::Plugin(_) => unreachable!("Plugin modules use dynamic serialization"),
         }
     }
 
@@ -315,6 +326,14 @@ impl BarModule {
             _ => None,
         }
     }
+
+    /// Returns the plugin module ID if this is a plugin module.
+    pub fn plugin_id(&self) -> Option<&str> {
+        match self {
+            Self::Plugin(id) => Some(id),
+            _ => None,
+        }
+    }
 }
 
 impl Serialize for BarModule {
@@ -325,6 +344,10 @@ impl Serialize for BarModule {
         match self {
             Self::Custom(id) => {
                 let name = format!("{}{}", Self::CUSTOM_PREFIX, id);
+                serializer.serialize_str(&name)
+            }
+            Self::Plugin(id) => {
+                let name = format!("{}{}", Self::PLUGIN_PREFIX, id);
                 serializer.serialize_str(&name)
             }
             _ => serializer.serialize_str(self.to_kebab_case()),
@@ -346,6 +369,13 @@ impl<'de> Deserialize<'de> for BarModule {
             return Ok(Self::Custom(id.to_owned()));
         }
 
+        if let Some(id) = s.strip_prefix(Self::PLUGIN_PREFIX) {
+            if id.is_empty() {
+                return Err(de::Error::custom("plugin module ID cannot be empty"));
+            }
+            return Ok(Self::Plugin(id.to_owned()));
+        }
+
         Self::from_kebab_case(&s).ok_or_else(|| de::Error::unknown_variant(&s, BUILTIN_MODULES))
     }
 }
@@ -354,6 +384,7 @@ impl fmt::Display for BarModule {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Custom(id) => write!(f, "{}{}", Self::CUSTOM_PREFIX, id),
+            Self::Plugin(id) => write!(f, "{}{}", Self::PLUGIN_PREFIX, id),
             _ => f.write_str(self.to_kebab_case()),
         }
     }

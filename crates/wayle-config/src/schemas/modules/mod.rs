@@ -18,6 +18,7 @@ mod netstat;
 mod network;
 /// Notification module configuration and popup types.
 pub mod notification;
+mod plugin;
 mod power;
 mod ram;
 mod separator;
@@ -53,6 +54,7 @@ pub use notification::{
     IconSource, NotificationConfig, PopupCloseBehavior, PopupMonitor, PopupPosition, StackingOrder,
     UrgencyBarThreshold,
 };
+pub use plugin::{PluginDefinition, PluginKind};
 pub use power::PowerConfig;
 pub use ram::RamConfig;
 pub use separator::SeparatorConfig;
@@ -129,4 +131,7 @@ pub struct ModulesConfig {
     /// Custom user-defined modules.
     #[default(Vec::new())]
     pub custom: ConfigProperty<Vec<CustomModuleDefinition>>,
+    /// Native plugin module definitions.
+    #[default(Vec::new())]
+    pub plugins: ConfigProperty<Vec<PluginDefinition>>,
 }

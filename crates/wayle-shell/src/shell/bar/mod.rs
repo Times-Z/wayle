@@ -41,6 +41,7 @@ pub(crate) enum BarCmd {
     LayoutLoaded(BarLayout),
     StyleChanged,
     DropdownAutohideChanged(bool),
+    PluginDefinitionsChanged,
 }
 
 #[relm4::component(pub(crate))]
@@ -152,6 +153,7 @@ impl Component for Bar {
 
         watchers::layout::spawn(&sender, &init.monitor, &init.services.config, &ipc_state);
         watchers::dropdowns::spawn(&sender, &init.services.config);
+        watchers::plugins::spawn(&sender, &init.services.config);
 
         let dropdowns = Rc::new(DropdownRegistry::new(&init.services));
         dropdowns.warm_all();
@@ -218,6 +220,9 @@ impl Component for Bar {
             }
             BarCmd::DropdownAutohideChanged(autohide) => {
                 self.dropdowns.set_all_autohide(autohide);
+            }
+            BarCmd::PluginDefinitionsChanged => {
+                self.reload_plugin_modules();
             }
         }
     }

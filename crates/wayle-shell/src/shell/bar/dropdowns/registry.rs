@@ -316,6 +316,15 @@ impl DropdownRegistry {
         }
     }
 
+    pub(crate) fn register_external_instance(
+        &self,
+        name: impl Into<String>,
+        instance: DropdownInstance,
+    ) {
+        let name = name.into();
+        self.cache.borrow_mut().insert(name, Rc::new(instance));
+    }
+
     fn get_or_create(&self, name: &str) -> Option<Rc<DropdownInstance>> {
         let mut cache = self.cache.borrow_mut();
         if let Some(instance) = cache.get(name) {
