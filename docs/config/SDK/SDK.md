@@ -23,12 +23,29 @@ serde_json = "1"
 ### Minimum Plugin
 
 ```rust
-use wayle_plugin_sdk::{PluginUpdate, WaylePlugin, export_plugin};
+use wayle_plugin_sdk::{PLUGIN_ABI_VERSION, PluginManifest, PluginUpdate, WaylePlugin, export_plugin};
 
 #[derive(Default)]
 struct MyPlugin;
 
 impl WaylePlugin for MyPlugin {
+    fn manifest(&self) -> PluginManifest {
+        PluginManifest {
+            id: String::from("my-plugin"),
+            name: String::from("My Plugin"),
+            description: None,
+            version: String::from(env!("CARGO_PKG_VERSION")),
+            abi: PLUGIN_ABI_VERSION,
+            author: String::from("your-name"),
+            homepage: None,
+            license: String::from("MIT"),
+            capabilities: Vec::new(),
+            command_exec_allowed_prefixes: Vec::new(),
+            fs_read_allowed_paths: Vec::new(),
+            features: Vec::new(),
+        }
+    }
+
     fn refresh(&mut self) -> Result<PluginUpdate, String> {
         Ok(PluginUpdate {
             label: "hello".into(),

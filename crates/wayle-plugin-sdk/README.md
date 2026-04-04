@@ -51,6 +51,8 @@ Validation helpers:
 use wayle_plugin_sdk::{
     ActionBuilder,
     DropdownBuilder,
+    PLUGIN_ABI_VERSION,
+    PluginManifest,
     PluginStyle,
     PluginUpdateBuilder,
     WaylePlugin,
@@ -61,6 +63,23 @@ use wayle_plugin_sdk::{
 struct Demo;
 
 impl WaylePlugin for Demo {
+    fn manifest(&self) -> PluginManifest {
+        PluginManifest {
+            id: String::from("demo"),
+            name: String::from("Demo"),
+            description: None,
+            version: String::from(env!("CARGO_PKG_VERSION")),
+            abi: PLUGIN_ABI_VERSION,
+            author: String::from("your-name"),
+            homepage: None,
+            license: String::from("MIT"),
+            capabilities: Vec::new(),
+            command_exec_allowed_prefixes: Vec::new(),
+            fs_read_allowed_paths: Vec::new(),
+            features: Vec::new(),
+        }
+    }
+
     fn refresh(&mut self) -> Result<wayle_plugin_sdk::PluginUpdate, String> {
         let dropdown = DropdownBuilder::new()
             .title("Demo")
