@@ -1,4 +1,4 @@
-use std::sync::{Mutex, OnceLock};
+use std::{collections::VecDeque, sync::{Mutex, OnceLock}};
 
 mod builders;
 mod validators;
@@ -13,6 +13,7 @@ pub use validators::{
 };
 
 pub const PLUGIN_ABI_VERSION: i32 = 1;
+const MAX_GUEST_ALLOCATIONS: usize = 32;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HostError {
@@ -340,9 +341,9 @@ mod manifest_tests {
 #[cfg(test)]
 mod core_tests {
     use super::{
-        PLUGIN_ABI_VERSION, PluginAction, PluginManifest, PluginStyle, PluginUpdate, WaylePlugin,
-        encode_manifest, encode_output, plugin_abi_version, plugin_alloc, read_input,
-        read_packed_utf8,
+        MAX_GUEST_ALLOCATIONS, PLUGIN_ABI_VERSION, PluginAction, PluginManifest, PluginStyle,
+        PluginUpdate, WaylePlugin, allocation_count, encode_manifest, encode_output,
+        plugin_abi_version, plugin_alloc, read_input, read_packed_utf8,
     };
 
     #[test]
@@ -360,6 +361,15 @@ mod core_tests {
         assert_eq!(plugin_abi_version(), PLUGIN_ABI_VERSION);
         assert_eq!(plugin_alloc(0), 0);
         let _ = plugin_alloc(8);
+    }
+
+    #[test]
+    fn plugin_alloc_caps_retained_buffers() {
+        for len in 1..=(MAX_GUEST_ALLOCATIONS * 4) {
+            let _ = plugin_alloc(len as i32);
+        }
+
+        assert!(allocation_count() <= MAX_GUEST_ALLOCATIONS);
     }
 
     #[test]
@@ -722,17 +732,32 @@ pub extern "C" fn plugin_alloc(len: i32) -> i32 {
         return 0;
     };
 
-    let mut bytes = vec![0u8; len].into_boxed_slice();
+    let Ok(mut store) = allocations().lock() else {
+        return 0;
+    };
+
+    let mut bytes = if store.len() >= MAX_GUEST_ALLOCATIONS {
+        store.pop_front().unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
+    bytes.clear();
+    bytes.resize(len, 0);
+
     let ptr = bytes.as_mut_ptr() as usize;
-    if let Ok(mut store) = allocations().lock() {
-        store.push(bytes);
-    }
+    store.push_back(bytes);
     i32::try_from(ptr).unwrap_or(0)
 }
 
-fn allocations() -> &'static Mutex<Vec<Box<[u8]>>> {
-    static ALLOCATIONS: OnceLock<Mutex<Vec<Box<[u8]>>>> = OnceLock::new();
-    ALLOCATIONS.get_or_init(|| Mutex::new(Vec::new()))
+fn allocations() -> &'static Mutex<VecDeque<Vec<u8>>> {
+    static ALLOCATIONS: OnceLock<Mutex<VecDeque<Vec<u8>>>> = OnceLock::new();
+    ALLOCATIONS.get_or_init(|| Mutex::new(VecDeque::new()))
+}
+
+#[cfg(test)]
+fn allocation_count() -> usize {
+    allocations().lock().map(|store| store.len()).unwrap_or_default()
 }
 
 #[macro_export]
