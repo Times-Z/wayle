@@ -306,6 +306,7 @@ impl WasmRuntime {
         f(instance)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn create_instance(&self) -> Result<WasmPluginInstance, String> {
         let wasm_path = self
             .definition
@@ -345,12 +346,7 @@ impl WasmRuntime {
                 "wayle",
                 "run_command_utf8",
                 move |mut caller: Caller<'_, ()>, ptr: i32, len: i32| -> i64 {
-                    run_command_utf8_import(
-                        &mut caller,
-                        ptr,
-                        len,
-                        &effective_definition_for_import,
-                    )
+                    run_command_utf8_import(&mut caller, ptr, len, &effective_definition_for_import)
                         .unwrap_or(NO_PAYLOAD)
                 },
             )

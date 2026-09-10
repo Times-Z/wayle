@@ -4,204 +4,152 @@
 
 # Wayle
 
-[![CI](https://img.shields.io/github/actions/workflow/status/wayle-rs/wayle/ci.yml?branch=master)](https://github.com/wayle-rs/wayle/actions)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/wayle-rs/wayle/blob/master/LICENSE)
+<p align="center">
+  <a href="https://github.com/wayle-rs/wayle/actions"><img src="https://img.shields.io/github/actions/workflow/status/wayle-rs/wayle/ci.yml?branch=master&style=for-the-badge" alt="CI"></a>
+  <a href="https://github.com/wayle-rs/wayle/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License"></a>
+  <a href="https://wayle.app"><img src="https://img.shields.io/badge/Wiki-wayle.app-7aa2f7?style=for-the-badge" alt="Wiki"></a>
+</p>
 
-A configurable desktop shell for Wayland compositors. Built in Rust with GTK4
-and Relm4. Compositor-agnostic successor to HyprPanel.
+A Wayland desktop shell with the bar, notifications, OSD, wallpaper, and device controls built in. Written in Rust with GTK4 and Relm4.
 
-## Progress
+Configure it in `config.toml`, through the `wayle-settings` GUI, or with the `wayle config` CLI.
 
-### Core Infrastructure
+<p align="center">
+  <img src="assets/wayle-preview.png" alt="Wayle desktop shell">
+</p>
 
-- [x] **Configuration System** - Reactive TOML config with schema validation
-- [x] **CLI Interface** - Complete command-line management interface
-- [x] **Documentation Generator** - Auto-generated config docs from schemas
+<p align="center">
+  <img src="assets/wayle-settings-preview.png" alt="Wayle settings GUI">
+</p>
 
-### Services
+## Documentation
 
-- [x] **MPRIS**
-- [x] **PulseAudio**
-- [x] **Network**
-- [x] **Bluetooth**
-- [x] **Battery**
-- [x] **Notification Daemon**
-- [x] **Power Profiles**
-- [x] **System Tray**
-    - [x] GTK4 Adapter
-- [x] Hyprland
-- [x] **Cava**
+Full guides, reference, and walkthroughs are at **[wayle.app](https://wayle.app)**.
 
-### UI Components
+- [Getting started](https://wayle.app/guide/getting-started) - Installation instructions
+- [Editing config](https://wayle.app/guide/editing-config) - File layout, live reload, imports, CLI editing
+- [Bars and layouts](https://wayle.app/guide/bars-and-layouts) - Per monitor layouts, groups, classes
+- [Themes](https://wayle.app/guide/themes) - Color tokens, theme files
+- [Custom icons](https://wayle.app/guide/custom-icons) - Installing icons, icon sources
+- [Custom modules](https://wayle.app/guide/custom-modules) - Shell-backed bar modules
+- [CLI](https://wayle.app/guide/cli) - Every subcommand
+- [Config reference](https://wayle.app/config/) - Full config documentation
 
-- [x] **Component Library** - Base Relm4 widgets and containers
-- [x] **Bar Modules**:
-    - [x] Battery
-    - [x] Media
-    - [x] Volume
-    - [x] Network
-    - [x] Bluetooth
-    - [x] Clock
-    - [x] Microphone
-    - [x] System tray
-    - [x] Notification
-    - [x] Dashboard
-    - [x] Netstat
-    - [x] RAM
-    - [x] CPU
-    - [x] CPU Temp
-    - [x] Storage
-    - [x] Separator
-    - [x] Power
-    - [x] World clock
-    - [x] Weather
-    - [x] Idle Inhibit
-    - [x] Keyboard input
-    - [x] Hyprland Window title
-    - [x] Hyprland submap
-    - [x] Hyprsunset
-    - [x] Hyprland workspaces
-    - [x] Custom Modules
-    - [x] Cava
+## Install
 
-#### Scoped out
+Arch Linux binary:
 
-- **Updates**
-    - Too much surface area and distro coupling
-    - Will be achievable easily via custom modules
-
-### Dropdown Interfaces
-
-- [x] **Audio Panel**
-- [x] **Network Panel**
-- [x] **Bluetooth Panel**
-- [x] **Battery Panel**
-- [x] **Media Panel**
-- [x] **Weather Panel**
-- [x] **Calendar Panel**
-- [x] **Dashboard**
-- [x] **Notifications Panel**
-
-### Additional Features
-
-- [x] **Notifications**
-- [x] **OSD**
-- [ ] **Settings Dialog (WIP)**
-
-## Configuration
-
-Configuration lives in `~/.config/wayle/config.toml` with live reloading.
-
-```toml
-[styling]
-theme-provider = "wayle"
-
-[styling.palette]
-bg = "#16161e"
-fg = "#c0caf5"
-primary = "#7aa2f7"
-
-[bar]
-scale = 1
-location = "top"
-rounding = "sm"
-
-[[bar.layout]]
-monitor = "*"
-left = ["clock"]
-center = ["media"]
-right = ["battery"]
-
-[modules.clock]
-format = "%H:%M"
-icon-show = true
-label-show = true
-```
-
-Config files can be split and imported for better organization:
-
-```toml
-# config.toml
-imports = ["colors.toml", "modules/bar.toml"]
-
-[bar]
-location = "top"
-```
-
-CLI commands can also be used to modify, get or reset any property:
-
-```bash
-wayle config get bar.scale
-wayle config set bar.location bottom
-wayle config reset bar.scale
-```
-
-Once the project is finished, documentation will be added for all configurable
-properties, in addition to having a settings GUI. Until then you can run the
-following command to generate a reference config `config.toml.example` in your
-config directory:
-
-```bash
-wayle config default
-```
-
-Editor intellisense is available via JSON Schema. Install
-[Tombi](https://marketplace.visualstudio.com/items?itemName=tombi-toml.tombi)
-for VSCode or the `tombi` LSP for Neovim. The schema is generated automatically
-on startup.
-
-This will give you auto-complete, config validation and other nice QoL features
-for your config.toml (and other toml files).
-
-```bash
-wayle config schema
-```
-
-## Installation
-
-### Arch Linux (AUR)
-
-```bash
+```sh
 yay -S wayle-bin
 ```
 
-Then start the shell:
+<details>
+<summary><b>Arch (from source)</b></summary>
 
-```bash
-wayle shell
+Install Rust via [rustup](https://rustup.rs), then the system libraries:
+
+```sh
+sudo pacman -S --needed git gtk4 gtk4-layer-shell gtksourceview5 \
+  libpulse fftw libpipewire systemd-libs clang base-devel
 ```
 
-### From source
+Runtime daemons for the battery, bluetooth, network, power, and audio modules (skip any you don't need):
 
-Install Rust via [rustup](https://rustup.rs), then:
+```sh
+sudo pacman -S --needed bluez bluez-utils networkmanager upower \
+  power-profiles-daemon pipewire wireplumber pipewire-pulse
+sudo systemctl enable --now bluetooth NetworkManager upower power-profiles-daemon
+```
 
-```bash
+</details>
+
+<details>
+<summary><b>Debian / Ubuntu</b></summary>
+
+Ubuntu 24.04 LTS does not package `libgtk4-layer-shell-dev`. Use Ubuntu 25.04+ or Debian 13 (trixie).
+
+Install Rust via [rustup](https://rustup.rs), then the system libraries:
+
+```sh
+sudo apt install git pkg-config cmake libgtk-4-dev libgtk4-layer-shell-dev \
+  libgtksourceview-5-dev libpulse-dev libfftw3-dev libpipewire-0.3-dev \
+  libudev-dev clang build-essential
+```
+
+Runtime daemons:
+
+```sh
+sudo apt install dbus-user-session bluez network-manager \
+  upower power-profiles-daemon pipewire-pulse wireplumber
+sudo systemctl enable --now bluetooth NetworkManager upower power-profiles-daemon
+```
+
+</details>
+
+<details>
+<summary><b>Fedora</b></summary>
+
+Requires Fedora 42 or later.
+
+Install Rust via [rustup](https://rustup.rs), then the system libraries:
+
+```sh
+sudo dnf install git cmake pkgconf-pkg-config gtk4-devel gtk4-layer-shell-devel \
+  gtksourceview5-devel pulseaudio-libs-devel fftw-devel pipewire-devel \
+  systemd-devel clang gcc
+```
+
+Fedora Workstation already ships the runtime daemons. Minimal and Server installs need:
+
+```sh
+sudo dnf install pipewire-pulseaudio wireplumber NetworkManager bluez upower \
+  power-profiles-daemon
+sudo systemctl enable --now bluetooth NetworkManager upower power-profiles-daemon
+```
+
+</details>
+
+### Build and launch:
+
+```sh
 git clone https://github.com/wayle-rs/wayle
 cd wayle
 cargo install --path wayle
+cargo install --path crates/wayle-settings
 wayle icons setup
 wayle panel start
 ```
 
-## Icons
+On a different distro? See [wayle.app/guide/getting-started](https://wayle.app/guide/getting-started) for the library-version reference.
 
-Wayle uses GTK symbolic icons that support CSS color theming.
+<a href="https://repology.org/project/wayle/versions">
+    <img src="https://repology.org/badge/vertical-allrepos/wayle.svg" alt="Packaging status">
+</a>
 
-To manually manage icons:
+## Configuration
 
-```bash
-# Install bundled icons (automatic on first launch)
-wayle icons setup
+The config file is at `~/.config/wayle/config.toml`. Changes reload on save:
 
-# Install additional icons from CDN sources
-wayle icons install tabler home settings bell
-wayle icons install simple-icons firefox spotify
+```toml
+[bar]
+location = "top"
+scale = 1.25
 
-# See all available sources
-wayle icons install --help
+[[bar.layout]]
+monitor = "*"
+left = ["dashboard"]
+center = ["clock"]
+right = ["volume", "network", "bluetooth", "battery"]
+
+[modules.clock]
+format = "%H:%M"
 ```
 
-Icons are installed to `~/.local/share/wayle/icons/` as GTK symbolic icons.
+Every field is documented at [wayle.app/config](https://wayle.app/config/).
+
+## Requirements
+
+A Wayland compositor that implements the `wlr-layer-shell` protocol. Compositor-specific modules currently target Hyprland, Niri and Mango; Sway support is in planned soon.
 
 ## Custom Modules
 

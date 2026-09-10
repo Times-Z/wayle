@@ -5,6 +5,7 @@ use std::fmt;
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 pub use shadow::ShadowPreset;
+use wayle_derive::wayle_enum;
 
 /// Layout configuration for a bar on a specific monitor.
 ///
@@ -91,7 +92,37 @@ impl Default for BarLayout {
     }
 }
 
-/// A bar item: either a standalone module or a named group of modules.
+/// One entry in a bar layout section (`left`, `center`, or `right`).
+///
+/// Three shapes are accepted, all interchangeable in the same array:
+///
+/// - A plain module name: `"clock"`
+/// - A module with a CSS class for per-instance styling: `{ module = "clock", class = "primary" }`
+/// - A named group that wraps several modules in a shared container, addressable by CSS ID
+///
+/// ## Examples
+///
+/// ```toml
+/// [[bar.layout]]
+/// monitor = "*"
+///
+/// # Plain module
+/// left = ["dashboard"]
+///
+/// # Mix of plain and classed modules on the same side
+/// center = ["clock", { module = "clock", class = "secondary" }]
+///
+/// # Named group (renders inside a GTK container with CSS ID `#status`)
+/// right = [{ name = "status", modules = ["battery", "network", "volume"] }]
+///
+/// # Groups can hold classed modules too
+/// [[bar.layout]]
+/// monitor = "DP-2"
+/// left = [{ name = "clocks", modules = [
+///   { module = "clock", class = "local" },
+///   { module = "world-clock", class = "remote" }
+/// ]}]
+/// ```
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
 pub enum BarItem {
@@ -170,6 +201,8 @@ pub enum BarModule {
     Battery,
     /// Bluetooth connection status and devices.
     Bluetooth,
+    /// Backlight brightness control.
+    Brightness,
     /// Audio frequency visualizer.
     Cava,
     /// Current time display.
@@ -196,6 +229,10 @@ pub enum BarModule {
     Network,
     /// Network traffic statistics.
     Netstat,
+    /// Niri workspace switcher.
+    NiriWorkspaces,
+    /// MangoWM tag switcher.
+    MangoWorkspaces,
     /// Notification center button.
     Notifications,
     /// Power menu button.
@@ -253,10 +290,16 @@ impl BarModule {
     const CUSTOM_PREFIX: &str = "custom-";
     const PLUGIN_PREFIX: &str = "plugin-";
 
+    /// All built-in module names in kebab-case.
+    pub fn builtin_names() -> &'static [&'static str] {
+        BUILTIN_MODULES
+    }
+
     fn to_kebab_case(&self) -> &'static str {
         match self {
             Self::Battery => "battery",
             Self::Bluetooth => "bluetooth",
+            Self::Brightness => "brightness",
             Self::Cava => "cava",
             Self::Clock => "clock",
             Self::Cpu => "cpu",
@@ -270,6 +313,8 @@ impl BarModule {
             Self::Microphone => "microphone",
             Self::Network => "network",
             Self::Netstat => "netstat",
+            Self::NiriWorkspaces => "niri-workspaces",
+            Self::MangoWorkspaces => "mango-workspaces",
             Self::Notifications => "notifications",
             Self::Power => "power",
             Self::Ram => "ram",
@@ -290,6 +335,7 @@ impl BarModule {
         let module = match s {
             "battery" => Self::Battery,
             "bluetooth" => Self::Bluetooth,
+            "brightness" => Self::Brightness,
             "cava" => Self::Cava,
             "clock" => Self::Clock,
             "cpu" => Self::Cpu,
@@ -303,6 +349,8 @@ impl BarModule {
             "microphone" => Self::Microphone,
             "network" => Self::Network,
             "netstat" => Self::Netstat,
+            "niri-workspaces" => Self::NiriWorkspaces,
+            "mango-workspaces" => Self::MangoWorkspaces,
             "notifications" => Self::Notifications,
             "power" => Self::Power,
             "ram" => Self::Ram,
@@ -393,6 +441,7 @@ impl fmt::Display for BarModule {
 const BUILTIN_MODULES: &[&str] = &[
     "battery",
     "bluetooth",
+    "brightness",
     "cava",
     "clock",
     "cpu",
@@ -403,9 +452,11 @@ const BUILTIN_MODULES: &[&str] = &[
     "keybind-mode",
     "keyboard-input",
     "media",
+    "mango-workspaces",
     "microphone",
     "netstat",
     "network",
+    "niri-workspaces",
     "notifications",
     "power",
     "ram",
@@ -420,8 +471,8 @@ const BUILTIN_MODULES: &[&str] = &[
 ];
 
 /// Bar position on screen.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Hash)]
+#[wayle_enum]
 pub enum Location {
     /// Top edge of the screen.
     Top,
@@ -451,8 +502,8 @@ impl Location {
 }
 
 /// Border placement for bar buttons.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Hash)]
+#[wayle_enum(default)]
 pub enum BorderLocation {
     /// No border.
     #[default]
@@ -484,8 +535,8 @@ impl BorderLocation {
 }
 
 /// Visual style variants for bar buttons.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Hash)]
+#[wayle_enum(default)]
 pub enum BarButtonVariant {
     /// Icon + label, minimal background.
     #[default]
@@ -508,8 +559,8 @@ impl BarButtonVariant {
 }
 
 /// Icon position within bar buttons.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Hash)]
+#[wayle_enum(default)]
 pub enum IconPosition {
     /// Icon before label (left for horizontal, top for vertical bars).
     #[default]
@@ -525,5 +576,36 @@ impl IconPosition {
             Self::Start => None,
             Self::End => Some("icon-end"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bar_layout_group_roundtrip() {
+        let layout = BarLayout {
+            monitor: String::from("DP-1"),
+            extends: None,
+            show: true,
+            left: vec![
+                BarItem::Module(ModuleRef::Plain(BarModule::Clock)),
+                BarItem::Group(BarGroup {
+                    name: String::from("status"),
+                    modules: vec![ModuleRef::Plain(BarModule::Battery)],
+                }),
+            ],
+            center: vec![],
+            right: vec![],
+        };
+
+        let value = toml::Value::try_from(&layout).expect("serialize to toml::Value");
+        let toml_string = toml::to_string_pretty(&value).expect("serialize to string");
+
+        let deserialized: BarLayout =
+            toml::from_str(&toml_string).expect("deserialize from string");
+
+        assert_eq!(layout, deserialized);
     }
 }

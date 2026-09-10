@@ -1,4 +1,7 @@
-use std::{collections::VecDeque, sync::{Mutex, OnceLock}};
+use std::{
+    collections::VecDeque,
+    sync::{Mutex, OnceLock},
+};
 
 mod builders;
 mod validators;
@@ -757,7 +760,10 @@ fn allocations() -> &'static Mutex<VecDeque<Vec<u8>>> {
 
 #[cfg(test)]
 fn allocation_count() -> usize {
-    allocations().lock().map(|store| store.len()).unwrap_or_default()
+    allocations()
+        .lock()
+        .map(|store| store.len())
+        .unwrap_or_default()
 }
 
 #[macro_export]
